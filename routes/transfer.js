@@ -4,14 +4,12 @@ var fs = require('fs');
 function Transfer(dir){
 	this.dir = dir;
 	this.fileInfoCache = {};
-	this.dataCache = {};
 }
 
 var p = Transfer.prototype;
 
 p.clearCache = function(){
 	this.fileInfoCache = {};
-	this.dataCache = {};
 }
 
 p.transfer = function(req, res){

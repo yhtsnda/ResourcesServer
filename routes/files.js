@@ -12,7 +12,6 @@ const ROOT_DIR = '/datadisk/ftp';
 const RES_DIR = '/datadisk/ftp/resources';
 const RECOMMEND_DIR = '/datadisk/ftp/recommend'
 const CONFIG_FILE_PATH = '/datadisk/ftp/config.json'
-const CACHE_ENABLED = false;
 
 var list = {};
 var discoverySite = 'http://www.baidu.com';
@@ -30,27 +29,7 @@ router.use('/transfer', function(req, res, next){
 });
 
 router.use('/disk', function(req, res, next) {
-	if(!CACHE_ENABLED){
-		getFile(ROOT_DIR, req, res, next);
-		return;
-	}
-	client.get(req.url, function(err, cachedFileData){
-		if(err){
-			console.log("Client get %s: ", req.url, err);	
-		}
-		var cachedFileInfo = cache[req.url];
-		if(cachedFileData && cachedFileInfo){
-			console.log("Cache hit: ", req.url);
-			res.writeHead(200, {
-				"Content-Type": 'application/octet-stream',
-				'Content-Length': cachedFileInfo.size,
-				'Content-Disposition': 'attachment; filename=' + cachedFileInfo.fileName
-			});
-			res.end(cachedFileData);
-			return;
-		}
-		getFile(ROOT_DIR, req, res, next);
-	});
+	getFile(ROOT_DIR, req, res, next);
 });
 
 router.use('/recommend', function(req, res, next) {
@@ -58,38 +37,18 @@ router.use('/recommend', function(req, res, next) {
 });
 
 function getFile(dir, req, res, next){
-	// TODO 断点续传
-	// TODO 内存缓存或者redius
 	var urlObj = url.parse(req.url);
 	var filePath = decodeURI(urlObj.pathname);
 	var fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
 	console.log("File Read: url=%s path=%s name=%s", req.url, filePath, fileName);
-    getFileContnet(dir + filePath, function(error, data){
-    	if(error){
-			res.writeHead(404);
-			res.end();
-			console.log("File read error: url=%s path=%s", req.url, filePath);
-			console.log(error);
-			return;
-		}
-		// TODO async
-		var fileSize = fs.statSync(dir + filePath).size;
-		var fileName = encodeURIComponent(fileName);
-		res.writeHead(200, {
-			"Content-Type": 'application/octet-stream',
-			'Content-Length': fs.statSync(dir + filePath).size,
-			'Content-Disposition': 'attachment; filename=' + encodeURIComponent(fileName)
-		});
-		if(CACHE_ENABLED){
-			client.set(req.url, data);
-			cache[req.url] = {
-				size: fileSize,
-				fileName: fileName
-				//content: data,
-			};
-		}
-		res.end(data);
-    });
+	var fileSize = fs.statSync(dir + filePath).size;
+	var fileName = encodeURIComponent(fileName);
+	res.writeHead(200, {
+		"Content-Type": 'application/octet-stream',
+		'Content-Length': fileSize,
+		'Content-Disposition': 'attachment; filename=' + encodeURIComponent(fileName)
+	});
+	fs.createReadStream(dir + filePath).pipe(res);
 }
 
 router.get('/api/v1/update', function(req, res, next){
