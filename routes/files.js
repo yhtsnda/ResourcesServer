@@ -12,6 +12,7 @@ const ROOT_DIR = '/datadisk/ftp';
 const RES_DIR = '/datadisk/ftp/resources';
 const RECOMMEND_DIR = '/datadisk/ftp/recommend'
 const CONFIG_FILE_PATH = '/datadisk/ftp/config.json'
+const CACHE_ENABLED = false;
 
 var list = {};
 var discoverySite = 'http://www.baidu.com';
